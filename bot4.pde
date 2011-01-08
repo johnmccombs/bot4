@@ -39,6 +39,8 @@ THE SOFTWARE.
 #include <Servo.h>
 #include <AFMotor.h>
 
+// uncomment this line for debugging
+#define DEBUG 1
 
 // FORWARD/BACKWARD is relative to how you wire the motors.  change these
 // defines to make the motor go the right way and use 
@@ -77,6 +79,16 @@ int dir;
 /*-----------------------------------------------------------------*/
 void setup() {
   
+#ifdef DEBUG
+  Serial.begin(9600);
+#endif
+  
+  pinMode(switch1, OUTPUT);
+  pinMode(switch2, OUTPUT);
+  digitalWrite(switch1, HIGH);
+  digitalWrite(switch2, HIGH);
+
+  
   // connect to the servo and set to straight ahead
   steeringServo.attach(9);
   turn(0);
@@ -110,13 +122,23 @@ void loop() {
   int sw1 = digitalRead(switch1);
   int sw2 = digitalRead(switch2);
   
+#ifdef DEBUG
+  Serial.print(left);
+  Serial.print(" ");
+  Serial.print(right);
+  Serial.print(" ");
+  Serial.print(sw1);
+  Serial.print(" ");
+  Serial.println(sw2);
+#endif
+  
   // do we need to back up?  really close on either side OR moderately close on 
   // both sides OR either collision switch activated
-  if ((left > 425 || right > 425) || (left > 325 && right > 325) || (sw1 == 1 || sw2 == 1) ) {
+  if ((left > 425 || right > 425) || (left > 325 && right > 325) || (sw1 == 0 || sw2 == 0) ) {
     
-    // pick a direction to turn for the backup.  this if test ensure it
+    // pick a direction to turn for the backup.  this test ensure it
     // keeps turns the same way for 2.5 seconds, before it can make another choice  
-    if (millis() - t > 2500) {
+    if (millis() > t) {
     
       // decide based on which IR sensor reports closer.
       if (left+50 > right)
@@ -127,7 +149,7 @@ void loop() {
     }
     
     // reset the timer
-    t = millis();
+    t = millis() + 2500L;
     
     // turn the steering and reverse the motor
     turn(dir); 
@@ -170,7 +192,7 @@ void goFwd() {
   
   // set the speed and set the direction fwd.  note the
   // the motors are driven in opposite directions as the
-  // are on opposite sides of the vehicle
+  // are on opposite sides of the
   
   driveMotor1.setSpeed(speed);
   driveMotor1.run(actualBackward);
@@ -183,9 +205,7 @@ void goFwd() {
 /*-----------------------------------------------------------------*/
 void goBack() {
 
-  // set the speed and set the direction back.  note the
-  // the motors are driven in opposite directions as the
-  // are on opposite sides of the vehicle
+  // set the speed and set the direction back
   
   driveMotor1.setSpeed(speed);
   driveMotor1.run(actualForward);
